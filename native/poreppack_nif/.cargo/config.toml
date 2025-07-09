@@ -1,0 +1,11 @@
+[profile.dev]
+opt-level = 3
+codegen-units = 256
+debug = false # when possible
+
+[target.'cfg(target_os = "macos")']
+
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]

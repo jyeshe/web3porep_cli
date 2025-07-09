@@ -1,0 +1,8 @@
+{application, porepcli, [
+    {description, "porep CLI"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [kernel, stdlib, crypto]},
+    {mod, {porepcli_app, []}},
+    {env, []}
+]}.
