@@ -266,7 +266,7 @@ pack32(Bytes, MinerAddr) when
     poreppack_nif:sha256_hash(Bytes, MinerAddr).
 
 select_offset_for_poc(BlockHash) ->
-    Sum = lists:foldl(fun(Byte, Acc) -> Byte + Acc end, 0, binary:bin_to_list(BlockHash)),
+    Sum = lists:sum([Byte || <<Byte>> <= BlockHash]),
     Sum rem ?NUM_INCREMENTS.
 
 calculate_poc(BlockHash, SelectedOffset, PackedArray) ->
@@ -289,20 +289,12 @@ calculate_poc(BlockHash, SelectedOffset, PackedArray) ->
 run_and_drop([], _Num) ->
     [];
 run_and_drop(Tasks, NumThreads) ->
-    RunTasks = take_tasks(Tasks, NumThreads),
+    {RunTasks, RemainingTasks} = lists:split(min(NumThreads, length(Tasks)), Tasks),
     ok = lists:foreach(fun(Fun) -> spawn_link(Fun) end, RunTasks),
-    drop_tasks(Tasks, NumThreads).
-
-take_tasks(_List, 0) -> [];
-take_tasks([Head | Tail], Counter) -> [Head | take_tasks(Tail, Counter - 1)];
-take_tasks([], _Counter) -> [].
-
-drop_tasks(List, 0) -> List;
-drop_tasks([_Head | Tail], Counter) -> drop_tasks(Tail, Counter - 1);
-drop_tasks([], _Counter) -> [].
+    RemainingTasks.
 
 match_result({_BlockHash, PocHashes}, undefined) -> 
-    EncHashes = lists:map(fun(Hash) -> binary:encode_hex(Hash, lowercase) end, PocHashes),
+    EncHashes = [binary:encode_hex(Hash, lowercase) || Hash <- PocHashes],
     io:format("Generated PoC: ~p~n", [EncHashes]);
 match_result(Result1, Result2) when Result1 == Result2 -> 
     io:format("Generated PoC matches!~n");
